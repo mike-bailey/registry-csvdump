@@ -79,7 +79,7 @@ def rec(key, depth=0, resultname="output_default.csv"):
 if args.filename != None:
 	resultname = "{}_{}.csv".format(os.path.basename(args.filename),str(calendar.timegm(time.gmtime())))
 	f = open(resultname, 'a+')
-	f.write("Path, Timestamp, Key Name, Key Type, Key Data")
+	f.write("Path, Timestamp, Key Name, Key Type, Key Data\n")
 	reg = Registry.Registry(args.filename)
 	rec(reg.root(), 0, resultname)
 	print "{} {}".format("Written data to",str(resultname))
