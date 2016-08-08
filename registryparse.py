@@ -5,7 +5,7 @@ from Registry import Registry
 import argparse
 import calendar
 import time
-
+import binascii
 
 
 reload(sys)
@@ -28,23 +28,33 @@ def determine_type(valtype):
 		return "RegBin"
 	elif valtype == Registry.RegDWord:
 		return "RegDWord"
+	elif valtype == Registry.RegNone:
+		return "RegNone"
+	elif valtype == Registry.RegLink:
+		return "RegLink"
+	elif valtype == Registry.RegFullResourceDescriptor:
+		return "RegFullResourceDescriptor"
+	elif valtype == Registry.RegQWord:
+		return "RegQWord"
+	elif valtype == Registry.RegResourceRequirementsList:
+		return "RegResourceRequirementsList"
+	elif valtype == Registry.RegResourceList:
+		return "RegResourceList"
+	elif valtype == Registry.RegMultiSZ:
+		return "RegMultiSZ"
 	else:
 		return "N/A"
 
 def clean(valuedata, valtype):
 	# Specify what to do with common key types
-	if determine_type(valtype) == "RegSZ":
+	if determine_type(valtype) is "RegSZ" or "RegLink" or "RegResourceRequirementsList" or "RegResourceList" or "RegFullResourceDescriptor" or "RegExSZ" or "RegMultiSZ":
 		return valuedata
-	if determine_type(valtype) == "RegExSZ":
-		return valuedata
-	elif determine_type(valtype) == "RegBin":
-		return base64.b64encode(valuedata)
-	elif determine_type(valtype) == "RegDWord":
+	elif determine_type(valtype) is "RegDWord" or "RegQWord":
 		return valuedata
 	# If I don't know what to do, try to base64 it and if it's not ok with that (it'd be bc it's an int), return it
 	else:
 		try:
-			return base64.b64encode(valuedata)
+			return binascii.b2a_base64(valuedata)
 		except TypeError:
 			return valuedata
 
@@ -55,7 +65,14 @@ def rec(key, depth=0, resultname="output_default.csv"):
 	
 	
 	for valueiter in key.values():
-		f.write("{},{},{},{},{}\n".format(key.path(), change(key.timestamp()), valueiter.name(), determine_type(valueiter.value_type()), clean(valueiter.value(), valueiter.value_type())))
+		if valueiter.value_type() is Registry.RegBin:
+			f.write("{},{},{},{},{}\n".format(key.path(), change(key.timestamp()), valueiter.name(), determine_type(valueiter.value_type()), binascii.b2a_base64(valueiter.value()).replace('\n', '')))
+		elif valueiter.value_type() is Registry.RegResourceRequirementsList:
+			f.write("{},{},{},{},{}\n".format(key.path(), change(key.timestamp()), valueiter.name(), determine_type(valueiter.value_type()), binascii.b2a_base64(valueiter.value()).replace('\n', '')))
+		elif valueiter.value_type() is Registry.RegResourceList:
+			f.write("{},{},{},{},{}\n".format(key.path(), change(key.timestamp()), valueiter.name(), determine_type(valueiter.value_type()), binascii.b2a_base64(valueiter.value()).replace('\n', '')))
+		else:
+			f.write("{},{},{},{},{}\n".format(key.path(), change(key.timestamp()), valueiter.name(), determine_type(valueiter.value_type()), clean(valueiter.value(), valueiter.value_type())))
 	for subkey in key.subkeys():
 		rec(subkey, depth + 1, resultname)
 
