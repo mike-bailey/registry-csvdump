@@ -1,7 +1,5 @@
 import sys
 import os
-#import binascii
-#import pprint
 import base64
 from Registry import Registry
 import argparse
@@ -9,21 +7,18 @@ import calendar
 import time
 
 
-reload(sys)  # Reload does the trick!
-sys.setdefaultencoding('utf-8')
 
+reload(sys)
+# Sets encoding
+sys.setdefaultencoding('utf-8')
 parser = argparse.ArgumentParser(description='Processes Registry Hives into relatively somewhat ok CSVs.')
 parser.add_argument('-f','--filename', help='Parse a specific registry file')
 parser.add_argument('-d','--directory', help='Parse everything in a folder')
-
 args = parser.parse_args()
-
 if args.filename == None and args.directory == None:
 	parser.print_help()
 	exit(1)
 
-
-print 
 def determine_type(valtype):
 	if valtype == Registry.RegSZ:
 		return "RegSZ"
@@ -37,6 +32,7 @@ def determine_type(valtype):
 		return "N/A"
 
 def clean(valuedata, valtype):
+	# Specify what to do with common key types
 	if determine_type(valtype) == "RegSZ":
 		return valuedata
 	if determine_type(valtype) == "RegExSZ":
@@ -45,6 +41,7 @@ def clean(valuedata, valtype):
 		return base64.b64encode(valuedata)
 	elif determine_type(valtype) == "RegDWord":
 		return valuedata
+	# If I don't know what to do, try to base64 it and if it's not ok with that (it'd be bc it's an int), return it
 	else:
 		try:
 			return base64.b64encode(valuedata)
@@ -63,12 +60,12 @@ def rec(key, depth=0, resultname="output_default.csv"):
 		rec(subkey, depth + 1, resultname)
 
 if args.filename != None:
-	resultname = os.path.basename(args.filename)+"_"+str(calendar.timegm(time.gmtime()))+".csv"
+	resultname = "{}_{}.csv".format(os.path.basename(args.filename),str(calendar.timegm(time.gmtime())))
 	f = open(resultname, 'a+')
 	f.write("Path, Timestamp, Key Name, Key Type, Key Data")
 	reg = Registry.Registry(args.filename)
 	rec(reg.root(), 0, resultname)
-	print "Written data to "+str(resultname)
+	print "{} {}".format("Written data to",str(resultname))
 
 if args.directory != None:
 
